@@ -2,22 +2,27 @@ import { CodeBlock } from "@/components/ui/code-block";
 import { Card, CardContent } from "@/components/ui/card";
 import { Logo } from "@/components/logo";
 import { listProjects } from "@/db/queries/project";
+import { headers } from "next/headers";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-function getDeploymentUrl(): string {
+async function getDeploymentUrl(): Promise<string | null> {
   if (process.env.LANGUINE_BASE_URL) return process.env.LANGUINE_BASE_URL;
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
-  }
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return "http://localhost:3000";
+
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+
+  if (!host) return null;
+
+  const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
+
+  return `${protocol}://${host}`;
 }
 
 export default async function HomePage() {
-  const baseUrl = getDeploymentUrl();
+  const baseUrl = await getDeploymentUrl();
   const apiKeySet = Boolean(process.env.LANGUINE_API_KEY);
   const databaseSet = Boolean(process.env.DATABASE_URL);
 
@@ -34,7 +39,9 @@ export default async function HomePage() {
     }
   }
 
-  const loginCmd = `npx languine@selfhosted login --url ${baseUrl}`;
+  const loginCmd = baseUrl
+    ? `npx languine@selfhosted login --url ${baseUrl}`
+    : "Set LANGUINE_BASE_URL to your public deployment URL, then run: npx languine@selfhosted login --url <your-url>";
   const exampleProjectId = projects[0]?.id ?? "prj_xxxxxxx";
   const workflowYaml = `name: Languine
 on:
@@ -61,7 +68,8 @@ jobs:
       <header className="mb-12">
         <Logo height={20} />
         <p className="text-muted-foreground mt-4 text-sm">
-          Self-hosted localization, deployed on your own Vercel account.
+          Localization automation for your own infrastructure: connect the CLI,
+          translate locale files, and ship updates from CI.
         </p>
       </header>
 
@@ -71,20 +79,19 @@ jobs:
             label="Database"
             ok={databaseSet}
             okText="Connected"
-            failText="DATABASE_URL is not set. Connect Neon via the Vercel Marketplace."
+            failText="DATABASE_URL is not set. Connect a database and restart the app."
           />
           <StatusRow
             label="API key"
             ok={apiKeySet}
             okText="Set"
-            failText="LANGUINE_API_KEY is not set. Add it under Project Settings → Environment Variables."
+            failText="LANGUINE_API_KEY is not set. Add it to the app environment before using the CLI or action."
           />
           <StatusRow
-            label="Deployment Protection"
-            ok={null}
-            okText=""
-            failText=""
-            warnText="Make sure Vercel Deployment Protection is enabled so this dashboard and /cli/token are private."
+            label="Admin access"
+            ok={Boolean(process.env.LANGUINE_ADMIN_TOKEN)}
+            okText="Protected by LANGUINE_ADMIN_TOKEN"
+            failText="Set LANGUINE_ADMIN_TOKEN and send it as Authorization: Bearer <token> to protect owner-only routes such as /cli/token."
           />
         </CardContent>
       </Card>
@@ -159,7 +166,7 @@ jobs:
               </li>
               <li>
                 <code className="font-mono">LANGUINE_BASE_URL</code> (Variable) —{" "}
-                <code className="font-mono">{baseUrl}</code>.
+                <code className="font-mono">{baseUrl ?? "set this to your public deployment URL"}</code>.
               </li>
             </ul>
           </li>

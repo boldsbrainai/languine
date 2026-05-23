@@ -58,20 +58,48 @@ describe("lib/auth", () => {
   test("isOwnerRequest is permissive in development", async () => {
     (process.env as Record<string, string | undefined>).NODE_ENV = "development";
     const { isOwnerRequest } = await import("../auth");
-    expect(isOwnerRequest(new Headers())).toBe(true);
+    expect(isOwnerRequest(new Headers({ host: "localhost:3000" }))).toBe(true);
   });
 
-  test("isOwnerRequest requires Vercel headers in production", async () => {
+  test("isOwnerRequest is not permissive for non-local development hosts", async () => {
+    (process.env as Record<string, string | undefined>).NODE_ENV = "development";
+    delete process.env.LANGUINE_ADMIN_TOKEN;
+    const { isOwnerRequest } = await import("../auth");
+
+    expect(isOwnerRequest(new Headers({ host: "preview.example.com" }))).toBe(false);
+  });
+
+  test("isOwnerRequest is not permissive in test", async () => {
+    (process.env as Record<string, string | undefined>).NODE_ENV = "test";
+    delete process.env.LANGUINE_ADMIN_TOKEN;
+    const { isOwnerRequest } = await import("../auth");
+
+    expect(isOwnerRequest(new Headers({ host: "localhost:3000" }))).toBe(false);
+  });
+
+  test("isOwnerRequest requires LANGUINE_ADMIN_TOKEN in production", async () => {
     (process.env as Record<string, string | undefined>).NODE_ENV = "production";
-    delete process.env.VERCEL_ENV;
+    delete process.env.LANGUINE_ADMIN_TOKEN;
     const { isOwnerRequest } = await import("../auth");
 
     expect(isOwnerRequest(new Headers())).toBe(false);
+  });
+
+  test("isOwnerRequest accepts matching admin token headers in production", async () => {
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
+    process.env.LANGUINE_ADMIN_TOKEN = "owner-secret";
+    const { isOwnerRequest } = await import("../auth");
+
     expect(
-      isOwnerRequest(new Headers({ "x-vercel-id-token": "x" })),
+      isOwnerRequest(new Headers({ authorization: "Bearer owner-secret" })),
     ).toBe(true);
     expect(
-      isOwnerRequest(new Headers({ "x-vercel-protection-bypass": "x" })),
+      isOwnerRequest(
+        new Headers({ "x-languine-owner-token": "owner-secret" }),
+      ),
     ).toBe(true);
+    expect(
+      isOwnerRequest(new Headers({ authorization: "Bearer wrong-secret" })),
+    ).toBe(false);
   });
 });
