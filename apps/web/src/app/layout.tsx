@@ -28,8 +28,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      translate="no"
       className={`dark ${geistSans.variable} ${geistMono.variable}`}
     >
+      <head>
+        <meta name="google" content="notranslate" />
+      </head>
       <body className="antialiased">
         <TRPCProvider>{children}</TRPCProvider>
       </body>
