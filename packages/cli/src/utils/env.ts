@@ -4,7 +4,7 @@ import { expand } from "dotenv-expand";
 
 /**
  * Loads environment variables from a .env file in the working directory.
- * The CLI relies on the user's own Vercel deployment, so both the API key
+ * The CLI relies on the user's own deployment, so both the API key
  * and the base URL are required at runtime (either via env or `languine login`).
  */
 export function loadEnv(workingDir: string = process.cwd()) {

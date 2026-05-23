@@ -1,7 +1,7 @@
 {
   "name": "languine",
   "version": "4.0.1",
-  "description": "Self-hosted CLI for Languine — AI-powered localization for your codebase. Talks to a Languine deployment you run on your own Vercel account.",
+  "description": "Self-hosted CLI for Languine — AI-powered localization for your codebase. Talks to a Languine deployment you run yourself with Ollama behind it.",
   "type": "module",
   "bin": "dist/index.js",
   "license": "MIT",

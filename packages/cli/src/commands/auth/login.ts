@@ -50,7 +50,7 @@ export async function loginCommand(args: string[] = []) {
     ? normalizeBaseUrl(flags.url)
     : ((await text({
         message: "Your Languine deployment URL",
-        placeholder: "https://languine.your-team.vercel.app",
+        placeholder: "https://languine.your-team.example.com",
         validate: (value) => (!value ? "URL is required" : undefined),
       })) as string);
 
@@ -58,7 +58,7 @@ export async function loginCommand(args: string[] = []) {
 
   const tokenPage = `${baseUrl}/cli/token`;
   note(
-    `Open ${chalk.bold(tokenPage)} in your browser, copy the API key, and paste it below.\nYou must be authorized via Vercel Deployment Protection to view this page.`,
+    `Open ${chalk.bold(tokenPage)} in your browser, copy the API key, and paste it below.\nYou must be authorized by the deployment owner to view this page.`,
     "Get your API key",
   );
 

@@ -3,13 +3,13 @@
 </p>
 
 <p align="center">
-  Self-hosted, AI-powered localization for your codebase. The CLI for a Languine deployment you run on your own Vercel account.
+  Self-hosted, AI-powered localization for your codebase. The CLI for a Languine deployment you run yourself with Ollama behind it.
 </p>
 
 ---
 
 ```bash
-npx languine@selfhosted login --url https://languine.your-team.vercel.app
+npx languine@selfhosted login --url https://languine.your-team.example.com
 npx languine@selfhosted init
 npx languine@selfhosted translate
 ```
@@ -21,9 +21,9 @@ npx languine@selfhosted translate
 ## What is Languine?
 
 Languine is an AI-powered localization engine. The dashboard, the API, the
-queue and the AI gateway all live inside a single Next.js app you deploy
-to your own Vercel account in one click — no SaaS account, no per-key
-pricing, you only pay the model provider.
+queue and the Ollama-backed translation runtime all live behind a single
+Next.js app you deploy yourself — no SaaS account, no per-key pricing,
+you only pay for the infrastructure you run.
 
 This package is the CLI that talks to that deployment.
 
@@ -55,7 +55,7 @@ This package is the CLI that talks to that deployment.
 4. From your app's repo:
 
    ```bash
-   npx languine@selfhosted login --url https://languine.your-team.vercel.app
+  npx languine@selfhosted login --url https://languine.your-team.example.com
    npx languine@selfhosted init
    npx languine@selfhosted translate
    ```
@@ -63,8 +63,8 @@ This package is the CLI that talks to that deployment.
 For non-interactive use (CI, scripts):
 
 ```bash
-export LANGUINE_BASE_URL=https://languine.your-team.vercel.app
-export LANGUINE_API_KEY=<the-key-you-set-on-vercel>
+export LANGUINE_BASE_URL=https://languine.your-team.example.com
+export LANGUINE_API_KEY=<the-key-you-set-on-your-deployment>
 npx languine@selfhosted translate
 ```
 
