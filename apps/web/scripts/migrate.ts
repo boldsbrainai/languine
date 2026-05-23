@@ -10,8 +10,11 @@
  */
 
 import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
-import { migrate } from "drizzle-orm/neon-http/migrator";
+import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
+import { migrate as migrateNeon } from "drizzle-orm/neon-http/migrator";
+import { drizzle as drizzleNode } from "drizzle-orm/node-postgres";
+import { migrate as migrateNode } from "drizzle-orm/node-postgres/migrator";
+import { Pool } from "pg";
 
 const url = process.env.DATABASE_URL;
 
@@ -25,12 +28,34 @@ if (process.env.SKIP_MIGRATIONS === "1") {
   process.exit(0);
 }
 
-async function main() {
-  const sql = neon(url!);
-  const db = drizzle(sql);
+function isNeonDatabaseUrl(value: string): boolean {
+  try {
+    return new URL(value).hostname.toLowerCase().includes("neon.tech");
+  } catch {
+    return false;
+  }
+}
 
+async function main() {
   console.log("[languine] Applying migrations...");
-  await migrate(db, { migrationsFolder: "./drizzle" });
+
+  if (isNeonDatabaseUrl(url!)) {
+    const sql = neon(url!);
+    const db = drizzleNeon(sql);
+    await migrateNeon(db, { migrationsFolder: "./drizzle" });
+    console.log("[languine] Migrations applied.");
+    return;
+  }
+
+  const pool = new Pool({ connectionString: url! });
+
+  try {
+    const db = drizzleNode(pool);
+    await migrateNode(db, { migrationsFolder: "./drizzle" });
+  } finally {
+    await pool.end();
+  }
+
   console.log("[languine] Migrations applied.");
 }
 

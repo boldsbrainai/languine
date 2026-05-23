@@ -1,22 +1,40 @@
 import { neon } from "@neondatabase/serverless";
-import { type NeonHttpDatabase, drizzle } from "drizzle-orm/neon-http";
+import { type NeonHttpDatabase, drizzle as drizzleNeon } from "drizzle-orm/neon-http";
+import { type NodePgDatabase, drizzle as drizzleNode } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import * as schema from "./schema";
 
 type Schema = typeof schema;
-type Db = NeonHttpDatabase<Schema>;
+type Db = NeonHttpDatabase<Schema> | NodePgDatabase<Schema>;
 
 let _db: Db | null = null;
+let _pool: Pool | null = null;
+
+function isNeonDatabaseUrl(url: string): boolean {
+  try {
+    return new URL(url).hostname.toLowerCase().includes("neon.tech");
+  } catch {
+    return false;
+  }
+}
 
 function getDb(): Db {
   if (_db) return _db;
   const url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error(
-      "DATABASE_URL is not set. Connect a Neon database via the Vercel Marketplace, or set it locally.",
+      "DATABASE_URL is not set. Set a Postgres-compatible connection string and restart the app.",
     );
   }
-  const sql = neon(url);
-  _db = drizzle(sql, { schema });
+
+  if (isNeonDatabaseUrl(url)) {
+    const sql = neon(url);
+    _db = drizzleNeon(sql, { schema });
+    return _db;
+  }
+
+  _pool ??= new Pool({ connectionString: url });
+  _db = drizzleNode(_pool, { schema });
   return _db;
 }
 
